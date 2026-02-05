@@ -1,3 +1,5 @@
+package com.student;
+
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -19,11 +21,11 @@ public class StudentRegistrationForm extends Application {
     private ComboBox<String> yearCombo;
     private RadioButton maleRadio;
     private RadioButton femaleRadio;
-    private CheckBox civilCheckBox;
-    private CheckBox computerCheckBox;
-    private CheckBox electricalCheckBox;
-    private CheckBox electronicCheckBox;
-    private CheckBox mechanicalCheckBox;
+    private RadioButton civilRadio;
+    private RadioButton computerRadio;
+    private RadioButton electricalRadio;
+    private RadioButton electronicRadio;
+    private RadioButton mechanicalRadio;
     private TextArea outputArea;
 
     @Override
@@ -55,7 +57,7 @@ public class StudentRegistrationForm extends Application {
         mainContainer.getChildren().addAll(formGrid, outputBox);
 
         // Create scene
-        Scene scene = new Scene(mainContainer, 650, 550);
+        Scene scene = new Scene(mainContainer, 650, 600);
         primaryStage.setScene(scene);
         primaryStage.show();
     }
@@ -182,19 +184,30 @@ public class StudentRegistrationForm extends Application {
     }
 
     private VBox createDepartmentSelector() {
-        civilCheckBox = new CheckBox("Civil");
-        computerCheckBox = new CheckBox("Computer Science and Engineering");
-        electricalCheckBox = new CheckBox("Electrical");
-        electronicCheckBox = new CheckBox("Electronics and Communication");
-        mechanicalCheckBox = new CheckBox("Mechanical");
+        ToggleGroup departmentGroup = new ToggleGroup();
+        
+        civilRadio = new RadioButton("Civil");
+        civilRadio.setToggleGroup(departmentGroup);
+        
+        computerRadio = new RadioButton("Computer Science and Engineering");
+        computerRadio.setToggleGroup(departmentGroup);
+        
+        electricalRadio = new RadioButton("Electrical");
+        electricalRadio.setToggleGroup(departmentGroup);
+        
+        electronicRadio = new RadioButton("Electronics and Communication");
+        electronicRadio.setToggleGroup(departmentGroup);
+        
+        mechanicalRadio = new RadioButton("Mechanical");
+        mechanicalRadio.setToggleGroup(departmentGroup);
 
         VBox departmentBox = new VBox(5);
         departmentBox.getChildren().addAll(
-            civilCheckBox,
-            computerCheckBox,
-            electricalCheckBox,
-            electronicCheckBox,
-            mechanicalCheckBox
+            civilRadio,
+            computerRadio,
+            electricalRadio,
+            electronicRadio,
+            mechanicalRadio
         );
 
         return departmentBox;
@@ -213,11 +226,119 @@ public class StudentRegistrationForm extends Application {
         return buttonBox;
     }
 
+    /**
+     * Validates email format using regex pattern
+     */
+    private boolean isValidEmail(String email) {
+        // Basic email validation pattern
+        String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
+        return email != null && email.matches(emailRegex);
+    }
+
+    /**
+     * Validates password strength
+     * Requirements: At least 8 characters, contains letter and number
+     */
+    private boolean isValidPassword(String password) {
+        if (password == null || password.length() < 8) {
+            return false;
+        }
+        
+        boolean hasLetter = password.matches(".*[A-Za-z].*");
+        boolean hasDigit = password.matches(".*\\d.*");
+        
+        return hasLetter && hasDigit;
+    }
+
+    /**
+     * Validates all form inputs before submission
+     */
+    private boolean validateForm() {
+        StringBuilder errors = new StringBuilder();
+
+        // Validate First Name
+        if (firstNameField.getText().trim().isEmpty()) {
+            errors.append("- First name is required\n");
+        }
+
+        // Validate Last Name
+        if (lastNameField.getText().trim().isEmpty()) {
+            errors.append("- Last name is required\n");
+        }
+
+        // Validate Email
+        String email = emailField.getText().trim();
+        String confirmEmail = confirmEmailField.getText().trim();
+
+        if (email.isEmpty()) {
+            errors.append("- Email address is required\n");
+        } else if (!isValidEmail(email)) {
+            errors.append("- Email address is not valid (e.g., user@example.com)\n");
+        }
+
+        if (confirmEmail.isEmpty()) {
+            errors.append("- Confirm email address is required\n");
+        } else if (!email.equals(confirmEmail)) {
+            errors.append("- Email addresses do not match\n");
+        }
+
+        // Validate Password
+        String password = passwordField.getText();
+        String confirmPassword = confirmPasswordField.getText();
+
+        if (password.isEmpty()) {
+            errors.append("- Password is required\n");
+        } else if (!isValidPassword(password)) {
+            errors.append("- Password must be at least 8 characters and contain letters and numbers\n");
+        }
+
+        if (confirmPassword.isEmpty()) {
+            errors.append("- Confirm password is required\n");
+        } else if (!password.equals(confirmPassword)) {
+            errors.append("- Passwords do not match\n");
+        }
+
+        // Validate Date of Birth
+        if (dayCombo.getValue() == null || monthCombo.getValue() == null || yearCombo.getValue() == null) {
+            errors.append("- Complete date of birth is required\n");
+        }
+
+        // Validate Gender
+        if (!maleRadio.isSelected() && !femaleRadio.isSelected()) {
+            errors.append("- Gender selection is required\n");
+        }
+
+        // Validate Department
+        if (!civilRadio.isSelected() && !computerRadio.isSelected() && 
+            !electricalRadio.isSelected() && !electronicRadio.isSelected() && 
+            !mechanicalRadio.isSelected()) {
+            errors.append("- A department must be selected\n");
+        }
+
+        // Show errors if any
+        if (errors.length() > 0) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Validation Error");
+            alert.setHeaderText("Please correct the following errors:");
+            alert.setContentText(errors.toString());
+            alert.showAndWait();
+            return false;
+        }
+
+        return true;
+    }
+
     private void handleSubmit() {
+        // Validate form first
+        if (!validateForm()) {
+            return; // Stop if validation fails
+        }
+
+        // If validation passes, display the data
         StringBuilder data = new StringBuilder();
         
         data.append("STUDENT REGISTRATION DETAILS\n");
-        data.append("=" .repeat(40)).append("\n\n");
+        data.append("=".repeat(40)).append("\n\n");
         
         data.append("Name: ").append(firstNameField.getText())
             .append(" ").append(lastNameField.getText()).append("\n");
@@ -233,14 +354,24 @@ public class StudentRegistrationForm extends Application {
                        (femaleRadio.isSelected() ? "Female" : "Not specified");
         data.append("Gender: ").append(gender).append("\n");
         
-        data.append("\nSelected Departments:\n");
-        if (civilCheckBox.isSelected()) data.append("  - Civil\n");
-        if (computerCheckBox.isSelected()) data.append("  - Computer Science and Engineering\n");
-        if (electricalCheckBox.isSelected()) data.append("  - Electrical\n");
-        if (electronicCheckBox.isSelected()) data.append("  - Electronics and Communication\n");
-        if (mechanicalCheckBox.isSelected()) data.append("  - Mechanical\n");
+        // Display selected department
+        String department = "Not selected";
+        if (civilRadio.isSelected()) department = "Civil";
+        else if (computerRadio.isSelected()) department = "Computer Science and Engineering";
+        else if (electricalRadio.isSelected()) department = "Electrical";
+        else if (electronicRadio.isSelected()) department = "Electronics and Communication";
+        else if (mechanicalRadio.isSelected()) department = "Mechanical";
+        
+        data.append("Department: ").append(department).append("\n");
         
         outputArea.setText(data.toString());
+
+        // Show success message
+        Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
+        successAlert.setTitle("Registration Successful");
+        successAlert.setHeaderText(null);
+        successAlert.setContentText("Student registration completed successfully!");
+        successAlert.showAndWait();
     }
 
     private void handleCancel() {
@@ -255,11 +386,11 @@ public class StudentRegistrationForm extends Application {
         yearCombo.setValue(null);
         maleRadio.setSelected(false);
         femaleRadio.setSelected(false);
-        civilCheckBox.setSelected(false);
-        computerCheckBox.setSelected(false);
-        electricalCheckBox.setSelected(false);
-        electronicCheckBox.setSelected(false);
-        mechanicalCheckBox.setSelected(false);
+        civilRadio.setSelected(false);
+        computerRadio.setSelected(false);
+        electricalRadio.setSelected(false);
+        electronicRadio.setSelected(false);
+        mechanicalRadio.setSelected(false);
         outputArea.clear();
     }
 
